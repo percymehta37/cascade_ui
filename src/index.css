@@ -2398,3 +2398,371 @@ td:first-child span { margin-top: 3px; color: var(--muted); font-size: 12px; whi
   padding: 6px 8px;
   font-size: 11px;
 }
+
+
+/* ==========================================================================
+   COCKPIT HUD ALIGNMENT (Ron Design Lab / Auxon Inspired Layout)
+   ========================================================================== */
+
+.hud-cockpit {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 128px);
+  min-height: 680px;
+  background: #080d12;
+  overflow: hidden;
+}
+
+.hud-terrain-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.hud-cockpit-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 12px 18px 14px;
+  pointer-events: none;
+}
+
+.hud-cockpit-overlay > * {
+  pointer-events: auto;
+}
+
+/* Top Floating Bar */
+.hud-top-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.hud-top-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 12px;
+}
+
+/* Segmented Capsule Switcher (like Image 1) */
+.hud-center-pill-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 9999px;
+  background: rgba(13, 20, 29, 0.78);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+}
+
+.hud-pill-tab {
+  padding: 5px 14px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #9aaab8;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 140ms ease;
+  white-space: nowrap;
+}
+
+.hud-pill-tab:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.hud-pill-tab.is-active {
+  background: #28b8c5;
+  color: #0b1118;
+  font-weight: 700;
+  box-shadow: 0 2px 10px rgba(40, 184, 197, 0.4);
+}
+
+.hud-tool-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background: rgba(13, 20, 29, 0.78);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e7edf3;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 140ms ease;
+}
+
+.hud-tool-pill:hover {
+  background: rgba(40, 184, 197, 0.18);
+  border-color: #28b8c5;
+  color: #28b8c5;
+}
+
+/* Middle Stage */
+.hud-middle-stage {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex: 1;
+  min-height: 0;
+  margin: 6px 0 10px;
+  pointer-events: none;
+}
+
+.hud-column {
+  width: 380px;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: calc(100vh - 275px);
+  pointer-events: auto;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.hud-column-right {
+  width: 410px;
+  max-width: 410px;
+  margin-left: auto;
+}
+
+/* Custom sleek HUD scrollbar */
+.hud-column::-webkit-scrollbar {
+  width: 4px;
+}
+.hud-column::-webkit-scrollbar-track {
+  background: transparent;
+}
+.hud-column::-webkit-scrollbar-thumb {
+  background: rgba(40, 184, 197, 0.25);
+  border-radius: 9999px;
+}
+.hud-column::-webkit-scrollbar-thumb:hover {
+  background: rgba(40, 184, 197, 0.5);
+}
+
+/* Center Contextual Floating Callouts */
+.hud-center-focal-callouts {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+}
+
+.hud-callout-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 14px;
+  border-radius: 9999px;
+  background: rgba(11, 17, 24, 0.82);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(40, 184, 197, 0.22);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  font-size: 11px;
+  color: #9aaab8;
+  pointer-events: auto;
+}
+
+.hud-callout-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #e45b5b;
+  box-shadow: 0 0 8px #e45b5b;
+  animation: pulse 1.8s infinite;
+}
+
+.hud-callout-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  background: rgba(228, 91, 91, 0.2);
+  color: #e45b5b;
+  border: 1px solid rgba(228, 91, 91, 0.35);
+}
+
+.hud-callout-divider {
+  width: 1px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Bottom Telemetry Dock (Inspired by Image 1 & 2) */
+.hud-bottom-dock {
+  width: 100%;
+  border-radius: 16px;
+  background: rgba(11, 17, 24, 0.84);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.05) inset;
+  padding: 8px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.hud-dock-kpis {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex: 1;
+  overflow-x: auto;
+}
+
+.hud-dock-kpi-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: fit-content;
+}
+
+.hud-dock-icon-box {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.hud-dock-val-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.hud-dock-label {
+  font-size: 10px;
+  color: #9aaab8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 500;
+}
+
+.hud-dock-val-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.hud-dock-value {
+  font-size: 16px;
+  font-weight: 750;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.hud-dock-sub {
+  font-size: 10px;
+  color: #687987;
+}
+
+.hud-dock-divider {
+  width: 1px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.08);
+  flex: none;
+}
+
+/* Dial/compass widget on the right of bottom dock (like Image 1) */
+.hud-dock-dial {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-left: 16px;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  flex: none;
+}
+
+.hud-dial-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px dashed rgba(40, 184, 197, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.hud-dial-inner {
+  font-size: 9px;
+  font-weight: 800;
+  color: #28b8c5;
+}
+
+.hud-dial-info {
+  display: flex;
+  flex-direction: column;
+  font-size: 10px;
+}
+
+.hud-dial-info strong {
+  color: #ffffff;
+  font-size: 11px;
+}
+
+.hud-dial-info span {
+  color: #687987;
+}
+
+/* Styling overhaul for cards inside the cockpit columns */
+.hud-column .ps03-card,
+.hud-column .risk-panel {
+  background: rgba(11, 17, 24, 0.8) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45) !important;
+  padding: 12px 14px !important;
+  margin: 0 !important;
+}
+
+.hud-column .ps03-card-header h3 {
+  font-size: 13px !important;
+}
+
+.hud-column .ps03-subtitle {
+  font-size: 10px !important;
+}
+
+.hud-column .ps03-table th {
+  padding: 5px 8px !important;
+  font-size: 10px !important;
+}
+
+.hud-column .ps03-table td {
+  padding: 6px 8px !important;
+  font-size: 11px !important;
+}
+
+@media (max-width: 1200px) {
+  .hud-column { width: 320px; max-width: 320px; }
+  .hud-column-right { width: 340px; max-width: 340px; }
+  .hud-dock-kpis { gap: 14px; }
+}

@@ -53,6 +53,8 @@ import {
   IncidentStrip,
   RankedNeedsAttentionTable,
   RiskOverTimeAndWhatChanged,
+  RiskOverTimeCard,
+  WhatChangedCard,
   DetectTelemetryAndRules,
   PredictShapAndTrendPanel,
   CascadePreviewPanel,
@@ -309,6 +311,60 @@ function Kpis() {
         </div>
       ))}
     </div>
+  )
+}
+
+function KpisHorizontal() {
+  const items = [
+    { label: "Org risk now", value: "71.8%", meta: "7,184 bp", Icon: ShieldAlert, tone: "critical" },
+    { label: "Change", value: "-42 bp", meta: "↓ Improving", Icon: ArrowDownRight, tone: "healthy" },
+    { label: "Above threshold", value: "05", meta: "> 60% limit", Icon: AlertTriangle, tone: "high" },
+    { label: "Open incidents", value: "02", meta: "PG-003 active", Icon: Flame, tone: "critical" },
+    { label: "New detections", value: "14", meta: "R1–R6 rules", Icon: Zap, tone: "medium" },
+  ]
+
+  const toneColors: Record<string, string> = {
+    critical: "#e45b5b",
+    healthy: "#42b98b",
+    high: "#e99a43",
+    medium: "#e4c85a",
+  }
+
+  return (
+    <>
+      <div className="hud-dock-kpis">
+        {items.map((it, idx) => (
+          <div key={it.label} className="hud-dock-kpi-item">
+            {idx > 0 && <div className="hud-dock-divider" />}
+            <div
+              className="hud-dock-icon-box"
+              style={{ color: toneColors[it.tone], borderColor: `${toneColors[it.tone]}40` }}
+            >
+              <it.Icon size={15} />
+            </div>
+            <div className="hud-dock-val-wrap">
+              <span className="hud-dock-label">{it.label}</span>
+              <div className="hud-dock-val-row">
+                <span className="hud-dock-value" style={it.tone === "critical" ? { color: "#f87171" } : {}}>
+                  {it.value}
+                </span>
+                <span className="hud-dock-sub">{it.meta}</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="hud-dock-dial">
+        <div className="hud-dial-circle">
+          <span className="hud-dial-inner">312°</span>
+        </div>
+        <div className="hud-dial-info">
+          <strong>Grid Nom: 400kV</strong>
+          <span>Telemetry Ingest OK</span>
+        </div>
+      </div>
+    </>
   )
 }
 
@@ -590,12 +646,12 @@ function CommandCentre({ openDrawer, openModal, openTrace }: CommandCentreProps)
   const [selectedId, setSelectedId] = useState("PG-003")
   const selected = assetById.get(selectedId) ?? assets[0]
   const [activeTab, setActiveTab] = useState<"Overview" | "Detect" | "Recommend" | "Scenarios" | "ModelCard">("Overview")
-  const [overlayExpanded, setOverlayExpanded] = useState(true)
+  const [panelsVisible, setPanelsVisible] = useState(true)
 
   return (
-    <div className="cc-fullmap">
-      {/* 1. Reverted back to the original TerrainMap */}
-      <div className="cc-map-bg">
+    <div className="hud-cockpit">
+      {/* 1. Full 3D Terrain Map as hero background */}
+      <div className="hud-terrain-canvas">
         <TerrainMap
           selectedAssetId={selectedId}
           onAssetSelect={(asset) => {
@@ -606,113 +662,164 @@ function CommandCentre({ openDrawer, openModal, openTrace }: CommandCentreProps)
         />
       </div>
 
-      {/* 2. PS-03 Component Overlays */}
-      <div className="cc-overlay">
-        {/* Active Incident Strip at the top (Section 7 in PDF) */}
-        <IncidentStrip onInspectAsset={openDrawer} />
+      {/* 2. Cockpit HUD Overlay */}
+      <div className="hud-cockpit-overlay">
+        
+        {/* Top Controls: Incident Strip + Floating Pill Switcher (like Image 1) */}
+        <div className="hud-top-bar">
+          <IncidentStrip onInspectAsset={openDrawer} />
 
-        {/* Top KPI strip (Section 1 in PDF) */}
-        <div className="cc-kpi-strip glass-panel">
-          <Kpis />
-        </div>
+          <div className="hud-top-controls-row">
+            {/* Center Segmented Pill Switcher (like First-Person/Third-Person view in Image 1) */}
+            <div className="hud-center-pill-tabs">
+              <button
+                className={`hud-pill-tab ${activeTab === "Overview" ? "is-active" : ""}`}
+                onClick={() => setActiveTab("Overview")}
+              >
+                Overview
+              </button>
+              <button
+                className={`hud-pill-tab ${activeTab === "Detect" ? "is-active" : ""}`}
+                onClick={() => setActiveTab("Detect")}
+              >
+                Detect & Rules (R1–R6)
+              </button>
+              <button
+                className={`hud-pill-tab ${activeTab === "Recommend" ? "is-active" : ""}`}
+                onClick={() => setActiveTab("Recommend")}
+              >
+                Recommend & What-If
+              </button>
+              <button
+                className={`hud-pill-tab ${activeTab === "Scenarios" ? "is-active" : ""}`}
+                onClick={() => setActiveTab("Scenarios")}
+              >
+                Scenario Replay (demo_week)
+              </button>
+              <button
+                className={`hud-pill-tab ${activeTab === "ModelCard" ? "is-active" : ""}`}
+                onClick={() => setActiveTab("ModelCard")}
+              >
+                Model Card & Trust
+              </button>
+            </div>
 
-        {/* Sub-navigation Tabs to access all PS-03 Layer Components */}
-        <div className="flex items-center justify-between gap-2 py-1 px-1">
-          <div className="flex items-center gap-1.5 flex-wrap">
+            {/* Toggle Full Terrain View */}
             <button
-              className={`ps03-sector-btn ${activeTab === "Overview" ? "is-active" : ""}`}
-              onClick={() => { setActiveTab("Overview"); setOverlayExpanded(true); }}
+              className="hud-tool-pill"
+              onClick={() => setPanelsVisible(!panelsVisible)}
+              title="Toggle HUD Panels for uninhibited terrain view"
             >
-              Overview &amp; Attention Table
-            </button>
-            <button
-              className={`ps03-sector-btn ${activeTab === "Detect" ? "is-active" : ""}`}
-              onClick={() => { setActiveTab("Detect"); setOverlayExpanded(true); }}
-            >
-              Detect &amp; Rules (R1–R6)
-            </button>
-            <button
-              className={`ps03-sector-btn ${activeTab === "Recommend" ? "is-active" : ""}`}
-              onClick={() => { setActiveTab("Recommend"); setOverlayExpanded(true); }}
-            >
-              Recommend &amp; What-If
-            </button>
-            <button
-              className={`ps03-sector-btn ${activeTab === "Scenarios" ? "is-active" : ""}`}
-              onClick={() => { setActiveTab("Scenarios"); setOverlayExpanded(true); }}
-            >
-              Scenario Replay (demo_week)
-            </button>
-            <button
-              className={`ps03-sector-btn ${activeTab === "ModelCard" ? "is-active" : ""}`}
-              onClick={() => { setActiveTab("ModelCard"); setOverlayExpanded(true); }}
-            >
-              Model Card &amp; Trust
+              <Layers3 size={14} />
+              <span>{panelsVisible ? "Hide Panels (Full Map)" : "Show Panels"}</span>
             </button>
           </div>
-
-          <button
-            className="ps03-sector-btn"
-            onClick={() => setOverlayExpanded(!overlayExpanded)}
-            title="Toggle panel overlay to view terrain map"
-          >
-            {overlayExpanded ? "Collapse View (See Map)" : "Expand Panels"}
-          </button>
         </div>
 
-        {/* Scrollable container for PDF specification components */}
-        {overlayExpanded && (
-          <div className="space-y-4 max-h-[calc(100vh-270px)] overflow-y-auto pr-1">
-            {activeTab === "Overview" && (
-              <>
-                <RankedNeedsAttentionTable
+        {/* Center Stage: Left Flank + Open Center Focal Point + Right Flank */}
+        {panelsVisible && (
+          <div className="hud-middle-stage">
+            {/* LEFT HUD FLANK (Floating Frosted Glass Cards) */}
+            <div className="hud-column hud-column-left">
+              {activeTab === "Overview" && (
+                <>
+                  <ActiveRisk
+                    asset={selected}
+                    onDetails={() => openDrawer(selected)}
+                    onContain={() => openModal("contain")}
+                  />
+                  <RankedNeedsAttentionTable
+                    onSelectAsset={(a) => {
+                      setSelectedId(a.id)
+                      openDrawer(a)
+                    }}
+                    onAction={(a) => {
+                      setSelectedId(a.id)
+                      openModal("contain")
+                    }}
+                  />
+                </>
+              )}
+
+              {activeTab === "Detect" && (
+                <DetectTelemetryAndRules
                   onSelectAsset={(a) => {
                     setSelectedId(a.id)
                     openDrawer(a)
                   }}
-                  onAction={(a) => {
-                    setSelectedId(a.id)
-                    openModal("contain")
-                  }}
                 />
-                <RiskOverTimeAndWhatChanged />
-              </>
-            )}
+              )}
 
-            {activeTab === "Detect" && (
-              <DetectTelemetryAndRules
-                onSelectAsset={(a) => {
-                  setSelectedId(a.id)
-                  openDrawer(a)
-                }}
-              />
-            )}
+              {activeTab === "Recommend" && (
+                <RecommendPlannerPanel
+                  asset={selected}
+                  onExecuteAction={(act) => openModal(act.toLowerCase())}
+                />
+              )}
 
-            {activeTab === "Recommend" && (
-              <RecommendPlannerPanel
-                asset={selected}
-                onExecuteAction={(act) => openModal(act.toLowerCase())}
-              />
-            )}
+              {activeTab === "Scenarios" && (
+                <ScenarioSimulationControls
+                  currentDay={5}
+                  onSetDay={(d) => console.log("Set simulated day:", d)}
+                  onInjectEvent={() => openModal("contain")}
+                />
+              )}
 
-            {activeTab === "Scenarios" && (
-              <ScenarioSimulationControls
-                currentDay={5}
-                onSetDay={(d) => console.log("Set simulated day:", d)}
-                onInjectEvent={(assetId, episode) => {
-                  openModal("contain")
-                }}
-              />
-            )}
-
-            {activeTab === "ModelCard" && (
-              <>
+              {activeTab === "ModelCard" && (
                 <ModelCardView />
+              )}
+            </div>
+
+            {/* FLOATING CONTEXTUAL CALLOUTS (Directly over the 3D Terrain, like Image 1) */}
+            <div className="hud-center-focal-callouts">
+              <div className="hud-callout-pill">
+                <span className="hud-callout-dot" />
+                <span>Target: <strong>{selected.id}</strong> ({selected.name})</span>
+                <span className="hud-callout-badge">{selected.level}</span>
+                <span className="hud-callout-divider" />
+                <span className="text-[#42b98b] font-semibold">Risk: {selected.risk.toFixed(1)}%</span>
+              </div>
+
+              <div className="hud-callout-pill">
+                <span>Cascade Radius: <strong>3 Hops</strong></span>
+                <span className="hud-callout-divider" />
+                <span>Critical Continuity: <strong>AIIMS Hospital · Jal Board</strong></span>
+              </div>
+            </div>
+
+            {/* RIGHT HUD FLANK (Floating Frosted Glass Cards) */}
+            <div className="hud-column hud-column-right">
+              {activeTab === "Overview" && (
+                <>
+                  <RiskOverTimeCard />
+                  <WhatChangedCard />
+                </>
+              )}
+
+              {activeTab === "Detect" && (
+                <CascadePreviewPanel asset={selected} />
+              )}
+
+              {activeTab === "Recommend" && (
+                <PredictShapAndTrendPanel asset={selected} />
+              )}
+
+              {activeTab === "Scenarios" && (
+                <CascadePreviewPanel asset={selected} />
+              )}
+
+              {activeTab === "ModelCard" && (
                 <TrustGovernanceBlock />
-              </>
-            )}
+              )}
+            </div>
           </div>
         )}
+
+        {/* BOTTOM TELEMETRY DOCK (The 5 KPIs + Compass Dial, styled like Image 1 & 2) */}
+        <div className="hud-bottom-dock">
+          <KpisHorizontal />
+        </div>
+
       </div>
     </div>
   )

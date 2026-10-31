@@ -383,123 +383,132 @@ export function RankedNeedsAttentionTable({
 // 1. OVERVIEW: RISK-OVER-TIME CHART & "WHAT CHANGED" FEED
 // -----------------------------------------------------------------------------
 
-export function RiskOverTimeAndWhatChanged() {
+export function RiskOverTimeCard() {
   const [selectedDayMarker, setSelectedDayMarker] = useState<RiskTimePoint | null>(riskTimelineData[2])
 
   return (
-    <div className="ps03-grid-2col">
-      {/* Risk Over Time Chart with Markers */}
-      <div className="ps03-card">
-        <div className="ps03-card-header">
-          <div>
-            <h3>Risk Over Time</h3>
-            <p className="ps03-subtitle">Org risk trajectory by day with event, patch & incident markers</p>
-          </div>
-          <span className="ps03-badge-layer">Predict</span>
+    <div className="ps03-card">
+      <div className="ps03-card-header">
+        <div>
+          <h3>Risk Over Time</h3>
+          <p className="ps03-subtitle">Org risk trajectory by day with event, patch & incident markers</p>
         </div>
+        <span className="ps03-badge-layer">Predict</span>
+      </div>
 
-        <div className="ps03-chart-timeline-area">
-          <svg viewBox="0 0 500 160" className="w-full h-40">
-            {/* Horizontal gridlines */}
-            <line x1="40" y1="20" x2="480" y2="20" stroke="rgba(40,184,197,0.1)" />
-            <line x1="40" y1="60" x2="480" y2="60" stroke="rgba(40,184,197,0.1)" />
-            <line x1="40" y1="100" x2="480" y2="100" stroke="rgba(40,184,197,0.1)" />
-            <line x1="40" y1="140" x2="480" y2="140" stroke="rgba(40,184,197,0.1)" />
+      <div className="ps03-chart-timeline-area">
+        <svg viewBox="0 0 500 160" className="w-full h-40">
+          {/* Horizontal gridlines */}
+          <line x1="40" y1="20" x2="480" y2="20" stroke="rgba(40,184,197,0.1)" />
+          <line x1="40" y1="60" x2="480" y2="60" stroke="rgba(40,184,197,0.1)" />
+          <line x1="40" y1="100" x2="480" y2="100" stroke="rgba(40,184,197,0.1)" />
+          <line x1="40" y1="140" x2="480" y2="140" stroke="rgba(40,184,197,0.1)" />
 
-            <text x="10" y="24" fill="#687987" fontSize="10">80%</text>
-            <text x="10" y="64" fill="#687987" fontSize="10">60%</text>
-            <text x="10" y="104" fill="#687987" fontSize="10">40%</text>
-            <text x="10" y="144" fill="#687987" fontSize="10">20%</text>
+          <text x="10" y="24" fill="#687987" fontSize="10">80%</text>
+          <text x="10" y="64" fill="#687987" fontSize="10">60%</text>
+          <text x="10" y="104" fill="#687987" fontSize="10">40%</text>
+          <text x="10" y="144" fill="#687987" fontSize="10">20%</text>
 
-            {/* Threshold reference line at 60% */}
-            <line x1="40" y1="60" x2="480" y2="60" stroke="#e99a43" strokeDasharray="3 3" strokeWidth="1" />
-            <text x="410" y="55" fill="#e99a43" fontSize="9">Threshold 60%</text>
+          {/* Threshold reference line at 60% */}
+          <line x1="40" y1="60" x2="480" y2="60" stroke="#e99a43" strokeDasharray="3 3" strokeWidth="1" />
+          <text x="410" y="55" fill="#e99a43" fontSize="9">Threshold 60%</text>
 
-            {/* Line graph */}
-            <polyline
-              fill="none"
-              stroke="#28b8c5"
-              strokeWidth="2.5"
-              points={riskTimelineData
-                .map((pt, i) => `${45 + i * 70},${150 - (pt.risk / 100) * 140}`)
-                .join(" ")}
-            />
+          {/* Line graph */}
+          <polyline
+            fill="none"
+            stroke="#28b8c5"
+            strokeWidth="2.5"
+            points={riskTimelineData
+              .map((pt, i) => `${45 + i * 70},${150 - (pt.risk / 100) * 140}`)
+              .join(" ")}
+          />
 
-            {/* Points & Event markers */}
-            {riskTimelineData.map((pt, i) => {
-              const cx = 45 + i * 70
-              const cy = 150 - (pt.risk / 100) * 140
-              const hasMarker = !!pt.eventMarker
-              const isSelected = selectedDayMarker?.day === pt.day
+          {/* Points & Event markers */}
+          {riskTimelineData.map((pt, i) => {
+            const cx = 45 + i * 70
+            const cy = 150 - (pt.risk / 100) * 140
+            const hasMarker = !!pt.eventMarker
+            const isSelected = selectedDayMarker?.day === pt.day
 
-              return (
-                <g key={pt.day} onClick={() => setSelectedDayMarker(pt)} className="cursor-pointer">
-                  {hasMarker && (
-                    <circle
-                      cx={cx}
-                      cy={cy}
-                      r="9"
-                      fill={pt.eventMarker?.type === "incident" ? "rgba(228,91,91,0.25)" : "rgba(66,185,139,0.25)"}
-                      className="animate-ping"
-                    />
-                  )}
+            return (
+              <g key={pt.day} onClick={() => setSelectedDayMarker(pt)} className="cursor-pointer">
+                {hasMarker && (
                   <circle
                     cx={cx}
                     cy={cy}
-                    r={isSelected ? 6 : 4}
-                    fill={pt.eventMarker?.type === "incident" ? "#e45b5b" : pt.eventMarker?.type === "patch" ? "#42b98b" : "#28b8c5"}
-                    stroke="#0b1118"
-                    strokeWidth="2"
+                    r="9"
+                    fill={pt.eventMarker?.type === "incident" ? "rgba(228,91,91,0.25)" : "rgba(66,185,139,0.25)"}
+                    className="animate-ping"
                   />
-                  <text x={cx} y="156" fill="#9aaab8" fontSize="9" textAnchor="middle">
-                    {pt.day.replace(" (Today)", "").replace(" (Forecast)", "*")}
-                  </text>
-                </g>
-              )
-            })}
-          </svg>
+                )}
+                <circle
+                  cx={cx}
+                  cy={cy}
+                  r={isSelected ? 6 : 4}
+                  fill={pt.eventMarker?.type === "incident" ? "#e45b5b" : pt.eventMarker?.type === "patch" ? "#42b98b" : "#28b8c5"}
+                  stroke="#0b1118"
+                  strokeWidth="2"
+                />
+                <text x={cx} y="156" fill="#9aaab8" fontSize="9" textAnchor="middle">
+                  {pt.day.replace(" (Today)", "").replace(" (Forecast)", "*")}
+                </text>
+              </g>
+            )
+          })}
+        </svg>
 
-          {/* Marker callout details */}
-          {selectedDayMarker?.eventMarker && (
-            <div className={`ps03-event-callout type-${selectedDayMarker.eventMarker.type}`}>
-              <span className="ps03-callout-day">{selectedDayMarker.day}:</span>
-              <strong>{selectedDayMarker.eventMarker.label}</strong>
-              <span className="ml-auto text-xs">Risk: {selectedDayMarker.risk}% ({selectedDayMarker.riskBp} bp)</span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* "What Changed" Feed (>= 100 bp movement) */}
-      <div className="ps03-card">
-        <div className="ps03-card-header">
-          <div>
-            <h3>"What Changed" Feed</h3>
-            <p className="ps03-subtitle">Assets whose risk moved by at least 100 bp with root cause</p>
+        {/* Marker callout details */}
+        {selectedDayMarker?.eventMarker && (
+          <div className={`ps03-event-callout type-${selectedDayMarker.eventMarker.type}`}>
+            <span className="ps03-callout-day">{selectedDayMarker.day}:</span>
+            <strong>{selectedDayMarker.eventMarker.label}</strong>
+            <span className="ml-auto text-xs">Risk: {selectedDayMarker.risk}% ({selectedDayMarker.riskBp} bp)</span>
           </div>
-          <span className="ps03-badge-layer">Proactive</span>
-        </div>
-
-        <div className="ps03-changed-feed">
-          {whatChangedFeed.map((item) => (
-            <div key={item.id} className="ps03-feed-item">
-              <div className="ps03-feed-top">
-                <strong>{item.assetId}</strong>
-                <span className="text-[#9aaab8]">{item.assetName}</span>
-                <span className={`ps03-delta-tag ${item.deltaBp > 0 ? "is-up" : "is-down"} ml-auto`}>
-                  {item.deltaBp > 0 ? `+${item.deltaBp} bp` : `${item.deltaBp} bp`}
-                </span>
-              </div>
-              <div className="ps03-feed-cause">{item.cause}</div>
-              <div className="ps03-feed-meta">
-                <span>{item.sector}</span>
-                <span>·</span>
-                <span>{item.timestamp}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+        )}
       </div>
+    </div>
+  )
+}
+
+export function WhatChangedCard() {
+  return (
+    <div className="ps03-card">
+      <div className="ps03-card-header">
+        <div>
+          <h3>"What Changed" Feed</h3>
+          <p className="ps03-subtitle">Assets whose risk moved by at least 100 bp with root cause</p>
+        </div>
+        <span className="ps03-badge-layer">Proactive</span>
+      </div>
+
+      <div className="ps03-changed-feed">
+        {whatChangedFeed.map((item) => (
+          <div key={item.id} className="ps03-feed-item">
+            <div className="ps03-feed-top">
+              <strong>{item.assetId}</strong>
+              <span className="text-[#9aaab8]">{item.assetName}</span>
+              <span className={`ps03-delta-tag ${item.deltaBp > 0 ? "is-up" : "is-down"} ml-auto`}>
+                {item.deltaBp > 0 ? `+${item.deltaBp} bp` : `${item.deltaBp} bp`}
+              </span>
+            </div>
+            <div className="ps03-feed-cause">{item.cause}</div>
+            <div className="ps03-feed-meta">
+              <span>{item.sector}</span>
+              <span>·</span>
+              <span>{item.timestamp}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export function RiskOverTimeAndWhatChanged() {
+  return (
+    <div className="ps03-grid-2col">
+      <RiskOverTimeCard />
+      <WhatChangedCard />
     </div>
   )
 }
