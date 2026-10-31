@@ -58,8 +58,22 @@
 .status-dot { margin-left: auto; width: 6px; height: 6px; border-radius: 50%; }
 .manage-orgs { display: flex; align-items: center; gap: 6px; padding: 9px 8px 0; color: var(--muted); font-size: 13px; }
 .manage-orgs:hover { color: var(--cyan); }
-.main-shell { min-height: 100vh; margin-left: var(--sidebar-width); }
-.topbar { position: sticky; top: 0; z-index: 20; display: flex; height: 82px; align-items: center; background: color-mix(in srgb, var(--bg), transparent 3%); padding: 0 24px; backdrop-filter: blur(12px); }
+.main-shell { min-height: 100vh; margin-left: 0 !important; width: 100% !important; }
+.sidebar { display: none !important; }
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  height: 60px;
+  align-items: center;
+  background: rgba(10, 16, 24, 0.92);
+  padding: 0 20px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 16px;
+}
 .page-heading h1 { font-size: 18px; font-weight: 650; letter-spacing: -.02em; }
 .page-heading p { margin-top: 5px; color: var(--muted); font-size: 13px; }
 .menu-btn { display: none !important; }
@@ -2765,4 +2779,95 @@ td:first-child span { margin-top: 3px; color: var(--muted); font-size: 12px; whi
   .hud-column { width: 320px; max-width: 320px; }
   .hud-column-right { width: 340px; max-width: 340px; }
   .hud-dock-kpis { gap: 14px; }
+}
+
+
+/* ==========================================================================
+   TOPBAR BRAND AND HORIZONTAL NAVIGATION STYLES
+   ========================================================================== */
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+
+.topbar-brand .brand-mark {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(40, 184, 197, 0.15);
+  color: #28b8c5;
+  border: 1px solid rgba(40, 184, 197, 0.3);
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-text strong {
+  font-size: 14px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  line-height: 1.15;
+}
+
+.brand-text span {
+  font-size: 10px;
+  color: #687987;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.topbar-nav {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex: 1;
+  overflow-x: auto;
+  padding: 2px 4px;
+}
+
+.topbar-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.topbar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #9aaab8;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 140ms ease;
+  white-space: nowrap;
+}
+
+.topbar-nav-item:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.topbar-nav-item.is-active {
+  color: #28b8c5;
+  background: rgba(40, 184, 197, 0.12);
+  border-color: rgba(40, 184, 197, 0.28);
+  font-weight: 600;
+}
+
+.profile-text {
+  display: flex;
+  flex-direction: column;
 }

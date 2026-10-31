@@ -239,32 +239,51 @@ function Sidebar({
 
 function Header({
   page,
-  onMenu,
+  setPage,
   onSearch,
   onToggleIncidents,
   activeIncidentsCount = 2,
 }: {
   page: Page
-  onMenu: () => void
+  setPage: (p: Page) => void
   onSearch: (v: string) => void
   onToggleIncidents?: () => void
   activeIncidentsCount?: number
 }) {
   return (
     <header className="topbar">
-      <Button variant="ghost" className="menu-btn" onClick={onMenu}>
-        <Menu size={20} />
-      </Button>
-      <div className="page-heading">
-        <h1>{page}</h1>
-        <p>{pageDescriptions[page]}</p>
+      <div className="topbar-brand">
+        <div className="brand-mark">
+          <Shield size={19} strokeWidth={1.8} />
+          <span className="brand-pulse" />
+        </div>
+        <div className="brand-text">
+          <strong>CascadeShield</strong>
+          <span>Resilience Cockpit</span>
+        </div>
       </div>
+
+      {/* Top horizontal navigation listing (moved from side panel) */}
+      <nav className="topbar-nav">
+        {nav.map(({ label, icon: Icon }) => (
+          <button
+            key={label}
+            onClick={() => setPage(label)}
+            className={`topbar-nav-item ${page === label ? "is-active" : ""}`}
+            title={pageDescriptions[label]}
+          >
+            <Icon size={14} strokeWidth={page === label ? 2.2 : 1.7} />
+            <span>{label}</span>
+          </button>
+        ))}
+      </nav>
+
       <div className="top-actions">
         <label className="global-search">
-          <Search size={16} />
+          <Search size={15} />
           <input
             onChange={(e) => onSearch(e.target.value)}
-            placeholder="Search assets, advisories, organisations…"
+            placeholder="Search assets, advisories…"
           />
           <kbd>⌘ K</kbd>
         </label>
@@ -274,16 +293,16 @@ function Header({
           title={`${activeIncidentsCount} Active Incident Alerts`}
           onClick={onToggleIncidents}
         >
-          <Bell size={17} />
+          <Bell size={16} />
           <span className="notification-dot" />
         </Button>
         <button className="profile">
           <span className="avatar">AL</span>
-          <span>
+          <span className="profile-text">
             <strong>Alex Lin</strong>
             <small>Security Lead</small>
           </span>
-          <ChevronDown size={14} />
+          <ChevronDown size={13} />
         </button>
       </div>
     </header>
@@ -1824,19 +1843,13 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <Sidebar
-        page={page}
-        setPage={setPage}
-        open={sidebarOpen}
-        setOpen={setSidebarOpen}
-      />
       <main className="main-shell">
         {/* Section 1 in PDF: Global simulation-only banner on every screen */}
         <GlobalSimulationBanner />
 
         <Header
           page={page}
-          onMenu={() => setSidebarOpen(true)}
+          setPage={setPage}
           onSearch={setSearch}
           onToggleIncidents={() => setIncidentsOpen((v) => !v)}
           activeIncidentsCount={2}
