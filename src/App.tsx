@@ -46,6 +46,18 @@ import {
 } from "lucide-react"
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts"
 import { TerrainMap } from "./components/terrain/TerrainMap"
+import { IndiaMap } from "./components/IndiaMap"
+import { CascadeWorldMap } from "./components/CascadeWorldMap"
+import {
+  AlertsIntensityChart,
+  RadialGauge,
+  PersonnelStack,
+  GlobalAttackVectors,
+  BlockView360,
+  TotalAttacksStats,
+  FrequencyStreamWaveform,
+  CompromiseEconomicsPanel,
+} from "./components/DashboardHud"
 import { Maximize2, Flame, AlertCircle } from "lucide-react"
 import {
   GlobalSimulationBanner,
@@ -68,7 +80,17 @@ import {
 } from "./data/cascadeshieldData"
 import { assets, assetById, organisations as orgData, orgByCode, riskHex, type Asset } from "./data/infrastructure"
 
-type Page = "Command Centre" | "Infrastructure View" | "Asset Inventory" | "Risk Intelligence" | "AI Agent Activity" | "Remediation Centre" | "Blockchain Audit" | "Settings"
+type Page =
+  | "Command Centre"
+  | "Live Attack Demo"
+  | "Security Operations"
+  | "Infrastructure View"
+  | "Asset Inventory"
+  | "Risk Intelligence"
+  | "AI Agent Activity"
+  | "Remediation Centre"
+  | "Blockchain Audit"
+  | "Settings"
 type Risk = "Critical" | "High" | "Medium" | "Low"
 
 interface NavItem {
@@ -78,6 +100,8 @@ interface NavItem {
 
 const nav: NavItem[] = [
   { label: "Command Centre", icon: CircleGauge },
+  { label: "Live Attack Demo", icon: Flame },
+  { label: "Security Operations", icon: Layers3 },
   { label: "Infrastructure View", icon: Map },
   { label: "Asset Inventory", icon: Database },
   { label: "Risk Intelligence", icon: ShieldAlert },
@@ -93,15 +117,14 @@ const organisations = orgData.map((org) => ({ ...org, icon: orgIcons[org.code], 
 const riskColors = riskHex
 
 const pageDescriptions: Record<Page, string> = {
-  "Command Centre": "Cross-organisation risk posture and priority actions",
-  "Infrastructure View":
-    "Explore infrastructure assets and dependency pathways",
+  "Command Centre": "Live threat map & regional grid performance (Splunk / CascadeShield Sentinel Matrix)",
+  "Live Attack Demo": "Interactive live cyber attack simulation, compromise economics & node isolation",
+  "Security Operations": "PS-03 Deep Dive: telemetry rules, model explanations & scenario replay",
+  "Infrastructure View": "Explore infrastructure assets and dependency pathways",
   "Asset Inventory": "Search and assess all monitored infrastructure assets",
-  "Risk Intelligence":
-    "Evidence, model explanations and downstream consequence analysis",
+  "Risk Intelligence": "Evidence, model explanations and downstream consequence analysis",
   "AI Agent Activity": "Review agent executions, decisions and system traces",
-  "Remediation Centre":
-    "Compare controls, simulate outcomes and manage approvals",
+  "Remediation Centre": "Compare controls, simulate outcomes and manage approvals",
   "Blockchain Audit": "Verify registrations, attestations and approval records",
   Settings: "Organisation, access and assessment preferences",
 }
@@ -160,6 +183,54 @@ function SectionTitle({
       </div>
       {action}
     </div>
+  )
+}
+
+function LeftHoverNavbar({
+  page,
+  setPage,
+  glowingNav,
+}: {
+  page: Page
+  setPage: (p: Page) => void
+  glowingNav: string | null
+}) {
+  return (
+    <aside className="left-hover-navbar">
+      <div className="left-hover-brand">
+        <div className="left-hover-brand-icon">
+          <Shield size={20} />
+        </div>
+        <div className="overflow-hidden">
+          <strong className="block text-white text-sm font-bold tracking-tight">CascadeShield</strong>
+          <span className="block text-[10px] text-[#687987] uppercase tracking-wider">SecOps Cyber Grid</span>
+        </div>
+      </div>
+      <nav className="left-hover-nav-list">
+        {nav.map(({ label, icon: Icon }) => {
+          const isGlowing = glowingNav === label
+          const isActive = page === label
+          return (
+            <button
+              key={label}
+              onClick={() => setPage(label)}
+              className={`left-hover-nav-item ${isActive ? "is-active" : ""} ${isGlowing ? "is-glowing" : ""}`}
+              title={label}
+            >
+              <div className="nav-icon-wrap">
+                <Icon size={17} />
+              </div>
+              <span className="truncate">{label}</span>
+              {isActive && <ChevronRight size={13} className="ml-auto text-[#28b8c5]" />}
+            </button>
+          )
+        })}
+      </nav>
+      <div className="p-3 border-t border-[#1a2634] text-[10px] text-[#687987] flex items-center gap-2">
+        <span className="w-2 h-2 rounded-full bg-[#42b98b] animate-ping" />
+        <span className="truncate">Grid Telemetry Live</span>
+      </div>
+    </aside>
   )
 }
 
@@ -586,132 +657,270 @@ interface CommandCentreProps extends PageDrawerProps {
   openTrace: () => void
 }
 
-function CommandCentre({ openDrawer, openModal, openTrace }: CommandCentreProps) {
+interface CommandCentreProps extends PageDrawerProps {
+  openModal: (mode: string) => void
+  openTrace: () => void
+  onNavigateWithGlow: (page: Page) => void
+}
+
+function CommandCentre({ openDrawer, openModal, openTrace, onNavigateWithGlow }: CommandCentreProps) {
   const [selectedId, setSelectedId] = useState("PG-003")
   const selected = assetById.get(selectedId) ?? assets[0]
-  const [activeTab, setActiveTab] = useState<"Overview" | "Detect" | "Recommend" | "Scenarios" | "ModelCard">("Overview")
-  const [overlayExpanded, setOverlayExpanded] = useState(true)
+  const [statsInterval, setStatsInterval] = useState("1 hour")
+  const [mapMode, setMapMode] = useState<"radware" | "national">("radware")
 
   return (
-    <div className="cc-fullmap">
-      {/* 1. Reverted back to the original TerrainMap */}
-      <div className="cc-map-bg">
-        <TerrainMap
+    <div className="relative w-full h-[calc(100vh-140px)] min-h-[760px] overflow-hidden bg-[#060b11] flex flex-col">
+      {/* Top Map Mode Switcher Pill */}
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-40 flex items-center bg-[#0a121c]/95 backdrop-blur-md p-1 rounded-full border border-[rgba(40,184,197,0.3)] shadow-2xl">
+        <button
+          onClick={() => setMapMode("radware")}
+          className={`px-3.5 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
+            mapMode === "radware"
+              ? "bg-[#28b8c5] text-[#060b11] shadow-[0_0_14px_rgba(40,184,197,0.8)]"
+              : "text-[#9aaab8] hover:text-white"
+          }`}
+        >
+          <span>🌐</span> Global Cyber Threat Matrix
+        </button>
+        <button
+          onClick={() => setMapMode("national")}
+          className={`px-3.5 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
+            mapMode === "national"
+              ? "bg-[#28b8c5] text-[#060b11] shadow-[0_0_14px_rgba(40,184,197,0.8)]"
+              : "text-[#9aaab8] hover:text-white"
+          }`}
+        >
+          <span>⚡</span> National Critical Grid (India)
+        </button>
+      </div>
+
+      {/* Main Mid Section: Map at Centre-Left + Blended Dashboard at Right */}
+      <div className="relative flex-1 flex overflow-hidden">
+        {/* Map Canvas (Centre-Left) */}
+        <div className="flex-1 relative h-full">
+          {mapMode === "radware" ? (
+            <CascadeWorldMap
+              onNavigateDetail={(metric) => onNavigateWithGlow("Risk Intelligence")}
+              onSelectCountry={(country) => {
+                if (country === "india") onNavigateWithGlow("Security Operations")
+                else onNavigateWithGlow("Risk Intelligence")
+              }}
+            />
+          ) : (
+            <IndiaMap
+              selectedAssetId={selectedId}
+              onAssetSelect={(asset) => {
+                setSelectedId(asset.id)
+                openDrawer(asset)
+              }}
+              liveAttackActive={false}
+            />
+          )}
+        </div>
+
+        {/* Right Blended HUD Dashboard Panel (Image 2 + Radware Vectors) */}
+        <div className="w-[340px] xl:w-[380px] h-full overflow-y-auto bg-gradient-to-r from-transparent via-[#081018]/90 to-[#060b11] border-l border-[rgba(40,184,197,0.18)] backdrop-blur-xl p-4 flex flex-col gap-3 shadow-[-12px_0_35px_rgba(0,0,0,0.6)] z-20">
+          <div className="flex items-center justify-between pb-2 border-b border-[#1b2836]">
+            <div>
+              <span className="text-white text-xs font-extrabold uppercase tracking-wider block">Live Threat Intel</span>
+              <span className="text-[10px] text-[#28b8c5]">Interval: {statsInterval}</span>
+            </div>
+            <select
+              value={statsInterval}
+              onChange={(e) => setStatsInterval(e.target.value)}
+              className="bg-[#101923] text-white border border-[#202e3a] rounded px-2 py-1 text-xs"
+            >
+              <option>1 hour</option>
+              <option>12 hour</option>
+              <option>24 hour</option>
+              <option>Real-time</option>
+            </select>
+          </div>
+
+          {/* Radial Gauges */}
+          <div className="space-y-2">
+            <RadialGauge
+              label="Malicious Ingress"
+              current="981"
+              total="1.7k"
+              percent={58}
+              color="#e99a43"
+              onDrillDown={() => onNavigateWithGlow("Risk Intelligence")}
+            />
+            <RadialGauge
+              label="Monitored Perimeter Assets"
+              current="2.4k"
+              total="8k"
+              percent={30}
+              color="#42b98b"
+              onDrillDown={() => onNavigateWithGlow("Asset Inventory")}
+            />
+          </div>
+
+          {/* Alert Intensity */}
+          <div className="p-3 rounded-lg bg-[#0b141e]/90 border border-[rgba(40,184,197,0.14)]">
+            <AlertsIntensityChart onDrillDown={() => onNavigateWithGlow("Risk Intelligence")} />
+          </div>
+
+          {/* Top Attackers, Top Attacked & Vectors */}
+          <GlobalAttackVectors onDrillDown={() => onNavigateWithGlow("Security Operations")} />
+
+          {/* SOC Personnel On-Duty Stack */}
+          <PersonnelStack onDrillDown={() => onNavigateWithGlow("AI Agent Activity")} />
+        </div>
+      </div>
+
+      {/* Bottom Blended HUD Floor Panel */}
+      <div className="w-full bg-gradient-to-t from-[#060b11] via-[#08121c]/95 to-transparent border-t border-[rgba(40,184,197,0.18)] backdrop-blur-xl px-5 py-2.5 z-20 flex flex-col gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+          <BlockView360 onDrillDown={() => onNavigateWithGlow("Security Operations")} />
+          <TotalAttacksStats onDrillDown={() => onNavigateWithGlow("Risk Intelligence")} />
+        </div>
+        <FrequencyStreamWaveform />
+      </div>
+    </div>
+  )
+}
+
+function LiveAttackDemoPage({
+  openDrawer,
+  openModal,
+}: {
+  openDrawer: (asset: Asset) => void
+  openModal: (mode: string) => void
+}) {
+  const [isIsolated, setIsIsolated] = useState(false)
+  const [selectedId, setSelectedId] = useState("PG-003")
+
+  return (
+    <div className="workspace">
+      {/* 1. Compromise Economics & Isolation Control Bar */}
+      <CompromiseEconomicsPanel
+        isIsolated={isIsolated}
+        onToggleIsolation={() => setIsIsolated((prev) => !prev)}
+        onResetDemo={() => setIsIsolated(false)}
+      />
+
+      {/* 2. Full Live Attack Trajectory Map with motion arrows */}
+      <div className="relative w-full h-[620px] rounded-xl overflow-hidden border border-[#202e3a] bg-[#080d12] shadow-2xl">
+        <IndiaMap
           selectedAssetId={selectedId}
           onAssetSelect={(asset) => {
             setSelectedId(asset.id)
             openDrawer(asset)
           }}
-          wheelZoom="always"
+          liveAttackActive={true}
+          isNodeIsolated={isIsolated}
+          onToggleIsolation={() => setIsIsolated((prev) => !prev)}
         />
       </div>
+    </div>
+  )
+}
 
-      {/* 2. PS-03 Component Overlays */}
-      <div className="cc-overlay">
-        {/* Active Incident Strip at the top (Section 7 in PDF) */}
-        <IncidentStrip onInspectAsset={openDrawer} />
+function SecurityOperationsPage({
+  openDrawer,
+  openModal,
+}: {
+  openDrawer: (asset: Asset) => void
+  openModal: (mode: string) => void
+}) {
+  const [selectedId, setSelectedId] = useState("PG-003")
+  const selected = assetById.get(selectedId) ?? assets[0]
+  const [activeTab, setActiveTab] = useState<"Overview" | "Detect" | "Recommend" | "Scenarios" | "ModelCard">("Overview")
 
-        {/* Top KPI strip (Section 1 in PDF) */}
-        <div className="cc-kpi-strip glass-panel">
-          <Kpis />
-        </div>
+  return (
+    <div className="workspace space-y-4">
+      {/* Top Incident Banner */}
+      <IncidentStrip onInspectAsset={openDrawer} />
 
-        {/* Sub-navigation Tabs to access all PS-03 Layer Components */}
-        <div className="flex items-center justify-between gap-2 py-1 px-1">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <button
-              className={`ps03-sector-btn ${activeTab === "Overview" ? "is-active" : ""}`}
-              onClick={() => { setActiveTab("Overview"); setOverlayExpanded(true); }}
-            >
-              Overview &amp; Attention Table
-            </button>
-            <button
-              className={`ps03-sector-btn ${activeTab === "Detect" ? "is-active" : ""}`}
-              onClick={() => { setActiveTab("Detect"); setOverlayExpanded(true); }}
-            >
-              Detect &amp; Rules (R1–R6)
-            </button>
-            <button
-              className={`ps03-sector-btn ${activeTab === "Recommend" ? "is-active" : ""}`}
-              onClick={() => { setActiveTab("Recommend"); setOverlayExpanded(true); }}
-            >
-              Recommend &amp; What-If
-            </button>
-            <button
-              className={`ps03-sector-btn ${activeTab === "Scenarios" ? "is-active" : ""}`}
-              onClick={() => { setActiveTab("Scenarios"); setOverlayExpanded(true); }}
-            >
-              Scenario Replay (demo_week)
-            </button>
-            <button
-              className={`ps03-sector-btn ${activeTab === "ModelCard" ? "is-active" : ""}`}
-              onClick={() => { setActiveTab("ModelCard"); setOverlayExpanded(true); }}
-            >
-              Model Card &amp; Trust
-            </button>
-          </div>
+      {/* Top KPI Bar */}
+      <Kpis />
 
-          <button
-            className="ps03-sector-btn"
-            onClick={() => setOverlayExpanded(!overlayExpanded)}
-            title="Toggle panel overlay to view terrain map"
-          >
-            {overlayExpanded ? "Collapse View (See Map)" : "Expand Panels"}
-          </button>
-        </div>
+      {/* PS-03 Sub-navigation Tabs */}
+      <div className="flex items-center gap-1.5 flex-wrap pb-2 border-b border-[#202e3a]">
+        <button
+          className={`ps03-sector-btn ${activeTab === "Overview" ? "is-active" : ""}`}
+          onClick={() => setActiveTab("Overview")}
+        >
+          Overview &amp; Attention Table
+        </button>
+        <button
+          className={`ps03-sector-btn ${activeTab === "Detect" ? "is-active" : ""}`}
+          onClick={() => setActiveTab("Detect")}
+        >
+          Detect &amp; Rules (R1–R6)
+        </button>
+        <button
+          className={`ps03-sector-btn ${activeTab === "Recommend" ? "is-active" : ""}`}
+          onClick={() => setActiveTab("Recommend")}
+        >
+          Recommend &amp; What-If
+        </button>
+        <button
+          className={`ps03-sector-btn ${activeTab === "Scenarios" ? "is-active" : ""}`}
+          onClick={() => setActiveTab("Scenarios")}
+        >
+          Scenario Replay (demo_week)
+        </button>
+        <button
+          className={`ps03-sector-btn ${activeTab === "ModelCard" ? "is-active" : ""}`}
+          onClick={() => setActiveTab("ModelCard")}
+        >
+          Model Card &amp; Trust
+        </button>
+      </div>
 
-        {/* Scrollable container for PDF specification components */}
-        {overlayExpanded && (
-          <div className="space-y-4 max-h-[calc(100vh-270px)] overflow-y-auto pr-1">
-            {activeTab === "Overview" && (
-              <>
-                <RankedNeedsAttentionTable
-                  onSelectAsset={(a) => {
-                    setSelectedId(a.id)
-                    openDrawer(a)
-                  }}
-                  onAction={(a) => {
-                    setSelectedId(a.id)
-                    openModal("contain")
-                  }}
-                />
-                <RiskOverTimeAndWhatChanged />
-              </>
-            )}
+      {/* Tab Panels */}
+      <div className="space-y-4">
+        {activeTab === "Overview" && (
+          <>
+            <RankedNeedsAttentionTable
+              onSelectAsset={(a) => {
+                setSelectedId(a.id)
+                openDrawer(a)
+              }}
+              onAction={(a) => {
+                setSelectedId(a.id)
+                openModal("contain")
+              }}
+            />
+            <RiskOverTimeAndWhatChanged />
+          </>
+        )}
 
-            {activeTab === "Detect" && (
-              <DetectTelemetryAndRules
-                onSelectAsset={(a) => {
-                  setSelectedId(a.id)
-                  openDrawer(a)
-                }}
-              />
-            )}
+        {activeTab === "Detect" && (
+          <DetectTelemetryAndRules
+            onSelectAsset={(a) => {
+              setSelectedId(a.id)
+              openDrawer(a)
+            }}
+          />
+        )}
 
-            {activeTab === "Recommend" && (
-              <RecommendPlannerPanel
-                asset={selected}
-                onExecuteAction={(act) => openModal(act.toLowerCase())}
-              />
-            )}
+        {activeTab === "Recommend" && (
+          <RecommendPlannerPanel
+            asset={selected}
+            onExecuteAction={(act) => openModal(act.toLowerCase())}
+          />
+        )}
 
-            {activeTab === "Scenarios" && (
-              <ScenarioSimulationControls
-                currentDay={5}
-                onSetDay={(d) => console.log("Set simulated day:", d)}
-                onInjectEvent={(assetId, episode) => {
-                  openModal("contain")
-                }}
-              />
-            )}
+        {activeTab === "Scenarios" && (
+          <ScenarioSimulationControls
+            currentDay={5}
+            onSetDay={(d) => console.log("Set simulated day:", d)}
+            onInjectEvent={(assetId, episode) => {
+              openModal("contain")
+            }}
+          />
+        )}
 
-            {activeTab === "ModelCard" && (
-              <>
-                <ModelCardView />
-                <TrustGovernanceBlock />
-              </>
-            )}
-          </div>
+        {activeTab === "ModelCard" && (
+          <>
+            <ModelCardView />
+            <TrustGovernanceBlock />
+          </>
         )}
       </div>
     </div>
@@ -1687,6 +1896,15 @@ export default function App() {
   const [simulatedDay, setSimulatedDay] = useState(6)
   const [selectedSector, setSelectedSector] = useState("All Sectors")
   const [incidentsOpen, setIncidentsOpen] = useState(false)
+  const [glowingNav, setGlowingNav] = useState<string | null>(null)
+
+  const handleNavigateWithGlow = (targetPage: Page) => {
+    setPage(targetPage)
+    setGlowingNav(targetPage)
+    setTimeout(() => {
+      setGlowingNav(null)
+    }, 3500)
+  }
 
   const content = useMemo(() => {
     switch (page) {
@@ -1696,6 +1914,21 @@ export default function App() {
             openDrawer={setDrawerAsset}
             openModal={setModal}
             openTrace={() => setTraceOpen(true)}
+            onNavigateWithGlow={handleNavigateWithGlow}
+          />
+        )
+      case "Live Attack Demo":
+        return (
+          <LiveAttackDemoPage
+            openDrawer={setDrawerAsset}
+            openModal={setModal}
+          />
+        )
+      case "Security Operations":
+        return (
+          <SecurityOperationsPage
+            openDrawer={setDrawerAsset}
+            openModal={setModal}
           />
         )
       case "Infrastructure View":
@@ -1717,14 +1950,15 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <Sidebar
+      {/* 1. Left Vertical Hover Navbar with Glow Effect */}
+      <LeftHoverNavbar
         page={page}
-        setPage={setPage}
-        open={sidebarOpen}
-        setOpen={setSidebarOpen}
+        setPage={handleNavigateWithGlow}
+        glowingNav={glowingNav}
       />
-      <main className="main-shell">
-        {/* Section 1 in PDF: Global simulation-only banner on every screen */}
+
+      {/* Main Workspace (Offset for collapsed 64px navbar) */}
+      <main className="main-shell-hover">
         <GlobalSimulationBanner />
 
         <Header
@@ -1735,7 +1969,6 @@ export default function App() {
           activeIncidentsCount={2}
         />
 
-        {/* Global simulated-date clock, org/sector switcher, model badge */}
         <GlobalClockAndModelBadge
           simulatedDay={simulatedDay}
           onDayChange={(delta) => setSimulatedDay((d) => Math.max(1, Math.min(6, d + delta)))}
@@ -1744,7 +1977,6 @@ export default function App() {
           onSectorChange={setSelectedSector}
         />
 
-        {/* Incidents Quick Dropdown from Header Bell */}
         {incidentsOpen && (
           <div className="ps03-incidents-dropdown glass-panel">
             <div className="ps03-dropdown-title">

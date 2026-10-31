@@ -2398,3 +2398,240 @@ td:first-child span { margin-top: 3px; color: var(--muted); font-size: 12px; whi
   padding: 6px 8px;
   font-size: 11px;
 }
+
+/* =========================================================================
+   CascadeShield Sentinel Matrix & Hover Navbar & Border-Blend HUD Extensions
+   ========================================================================= */
+
+/* Left Collapsible Hover Navbar */
+.left-hover-navbar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 64px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  background: rgba(10, 15, 22, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(40, 184, 197, 0.15);
+  box-shadow: 6px 0 28px rgba(0, 0, 0, 0.5);
+  transition: width 240ms cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.left-hover-navbar:hover {
+  width: 240px;
+}
+
+.left-hover-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 72px;
+  padding: 0 16px;
+  flex: none;
+  border-bottom: 1px solid rgba(40, 184, 197, 0.1);
+}
+
+.left-hover-brand-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: rgba(40, 184, 197, 0.15);
+  color: #28b8c5;
+  flex: none;
+}
+
+.left-hover-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 14px 10px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.left-hover-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 8px;
+  color: #9aaab8;
+  font-size: 12px;
+  font-weight: 500;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all 140ms ease;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.left-hover-nav-item:hover {
+  background: rgba(22, 33, 44, 0.6);
+  color: #ffffff;
+  border-color: rgba(40, 184, 197, 0.18);
+}
+
+.left-hover-nav-item.is-active {
+  background: rgba(40, 184, 197, 0.12);
+  color: #28b8c5;
+  border-color: rgba(40, 184, 197, 0.3);
+}
+
+.left-hover-nav-item .nav-icon-wrap {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  flex: none;
+  transition: all 200ms ease;
+}
+
+/* Glowing Navbar Icon (Dynamic feedback for selected analytics) */
+.left-hover-nav-item.is-glowing .nav-icon-wrap {
+  background: rgba(40, 184, 197, 0.22);
+  color: #ffffff;
+  border: 1.5px solid #28b8c5;
+  box-shadow: 0 0 16px rgba(40, 184, 197, 0.9), inset 0 0 8px rgba(40, 184, 197, 0.5);
+  animation: pulseNeonGlow 1.8s infinite ease-in-out;
+}
+
+@keyframes pulseNeonGlow {
+  0%, 100% {
+    box-shadow: 0 0 14px rgba(40, 184, 197, 0.7), inset 0 0 6px rgba(40, 184, 197, 0.3);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 22px rgba(40, 184, 197, 1), 0 0 8px #ffffff;
+    transform: scale(1.08);
+  }
+}
+
+/* Main Shell offset for collapsed navbar */
+.main-shell-hover {
+  min-height: 100vh;
+  margin-left: 64px;
+  display: flex;
+  flex-direction: column;
+  background: #080d12;
+}
+
+/* Radware Attack Types Legend on Map */
+.radware-attack-types-legend {
+  position: absolute;
+  top: 18px;
+  left: 20px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(11, 17, 24, 0.75);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(40, 184, 197, 0.15);
+  z-index: 20;
+  max-width: 210px;
+}
+
+.radware-type-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 3px 0;
+  transition: all 120ms ease;
+  text-align: left;
+}
+
+.radware-type-toggle:hover {
+  opacity: 1 !important;
+}
+
+/* Right HUD Side Panel with Border Blend */
+.hud-right-blend-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 290px;
+  padding: 16px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(14, 21, 29, 0.65) 0%, rgba(9, 14, 20, 0.85) 100%);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(40, 184, 197, 0.12);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.hud-threat-vectors-card, .hud-radware-vectors-card {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(14, 21, 29, 0.45);
+  border: 1px solid rgba(40, 184, 197, 0.08);
+  cursor: pointer;
+  transition: all 140ms ease;
+}
+
+.hud-threat-vectors-card, .hud-radware-vectors-card:hover {
+  border-color: rgba(40, 184, 197, 0.25);
+}
+
+.hud-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9aaab8;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* Bottom HUD Floor with Border Blend */
+.hud-bottom-blend-floor {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 24px;
+  background: linear-gradient(to top, rgba(8, 13, 18, 0.98) 0%, rgba(8, 13, 18, 0.82) 65%, transparent 100%);
+  backdrop-filter: blur(14px);
+  border-top: 1px solid rgba(40, 184, 197, 0.12);
+  z-index: 20;
+}
+
+/* Radware Timeline Stream Bar */
+.hud-frequency-stream-bar, .hud-radware-timeline-stream {
+  width: 100%;
+  border-radius: 6px;
+  background: rgba(13, 19, 27, 0.7);
+  border: 1px solid rgba(40, 184, 197, 0.1);
+  padding: 6px 10px;
+}
+
+.hud-stream-svg-box {
+  width: 100%;
+  height: 32px;
+  overflow: hidden;
+}
+
+/* Compromise Economics Box */
+.hud-compromise-economics-box {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border-color: rgba(228, 91, 91, 0.35);
+  background: linear-gradient(135deg, rgba(20, 10, 12, 0.85) 0%, rgba(12, 17, 24, 0.9) 100%);
+}
+
+.india-hud-alert-pill.is-breach {
+  border-color: #e45b5b;
+  background: rgba(36, 12, 14, 0.92);
+  box-shadow: 0 0 20px rgba(228, 91, 91, 0.4);
+}
