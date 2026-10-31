@@ -46,11 +46,29 @@ import {
 } from "lucide-react"
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts"
 import { TerrainMap } from "./components/terrain/TerrainMap"
-import { Maximize2 } from "lucide-react"
-import FullScreenMap from "./components/FullScreenMap"
+import { Maximize2, Flame, AlertCircle } from "lucide-react"
+import {
+  GlobalSimulationBanner,
+  GlobalClockAndModelBadge,
+  IncidentStrip,
+  RankedNeedsAttentionTable,
+  RiskOverTimeAndWhatChanged,
+  DetectTelemetryAndRules,
+  PredictShapAndTrendPanel,
+  CascadePreviewPanel,
+  RecommendPlannerPanel,
+  ScenarioSimulationControls,
+  ModelCardView,
+  TrustGovernanceBlock,
+} from "./components/PS03Components"
+import {
+  exposureFindings,
+  getAssetPredictDetails,
+  detectionsData,
+} from "./data/cascadeshieldData"
 import { assets, assetById, organisations as orgData, orgByCode, riskHex, type Asset } from "./data/infrastructure"
 
-type Page = "Command Centre" | "Infrastructure View" | "Asset Inventory" | "Risk Intelligence" | "AI Agent Activity" | "Remediation Centre" | "Blockchain Audit" | "Settings" | "Full Screen Map"
+type Page = "Command Centre" | "Infrastructure View" | "Asset Inventory" | "Risk Intelligence" | "AI Agent Activity" | "Remediation Centre" | "Blockchain Audit" | "Settings"
 type Risk = "Critical" | "High" | "Medium" | "Low"
 
 interface NavItem {
@@ -62,7 +80,6 @@ const nav: NavItem[] = [
   { label: "Command Centre", icon: CircleGauge },
   { label: "Infrastructure View", icon: Map },
   { label: "Asset Inventory", icon: Database },
-  { label: "Full Screen Map", icon: Maximize2 },
   { label: "Risk Intelligence", icon: ShieldAlert },
   { label: "AI Agent Activity", icon: Bot },
   { label: "Remediation Centre", icon: FileCheck2 },
@@ -80,7 +97,6 @@ const pageDescriptions: Record<Page, string> = {
   "Infrastructure View":
     "Explore infrastructure assets and dependency pathways",
   "Asset Inventory": "Search and assess all monitored infrastructure assets",
-  "Full Screen Map": "Full-screen view of Indian infrastructure terrain",
   "Risk Intelligence":
     "Evidence, model explanations and downstream consequence analysis",
   "AI Agent Activity": "Review agent executions, decisions and system traces",
@@ -223,10 +239,14 @@ function Header({
   page,
   onMenu,
   onSearch,
+  onToggleIncidents,
+  activeIncidentsCount = 2,
 }: {
   page: Page
   onMenu: () => void
   onSearch: (v: string) => void
+  onToggleIncidents?: () => void
+  activeIncidentsCount?: number
 }) {
   return (
     <header className="topbar">
@@ -246,7 +266,12 @@ function Header({
           />
           <kbd>⌘ K</kbd>
         </label>
-        <Button variant="secondary" className="icon-btn" title="Notifications">
+        <Button
+          variant="secondary"
+          className="icon-btn"
+          title={`${activeIncidentsCount} Active Incident Alerts`}
+          onClick={onToggleIncidents}
+        >
           <Bell size={17} />
           <span className="notification-dot" />
         </Button>
@@ -265,11 +290,11 @@ function Header({
 
 function Kpis() {
   const items = [
-    ["Monitored organisations", "03", Globe2, "+1 this quarter", "neutral"],
-    ["Total assets", "75", Database, "72 assessed", "neutral"],
-    ["Critical risks", "04", ShieldAlert, "1 new finding", "critical"],
-    ["Active advisories", "12", AlertTriangle, "3 require review", "high"],
-    ["Pending approvals", "02", Clock3, "Oldest · 4h 12m", "medium"],
+    ["Org risk now", "71.8%", ShieldAlert, "7,184 bp · Predict Layer", "critical"],
+    ["Change since yesterday", "-42 bp", ArrowDownRight, "↓ Improving trend", "healthy"],
+    ["Assets above threshold", "05", AlertTriangle, "> 60% threshold limit", "high"],
+    ["Open incidents", "02", Flame, "PG-003 active incident", "critical"],
+    ["New detections today", "14", Zap, "Across R1–R6 rules", "medium"],
   ] as const
   return (
     <div className="kpi-grid">
@@ -564,9 +589,12 @@ interface CommandCentreProps extends PageDrawerProps {
 function CommandCentre({ openDrawer, openModal, openTrace }: CommandCentreProps) {
   const [selectedId, setSelectedId] = useState("PG-003")
   const selected = assetById.get(selectedId) ?? assets[0]
+  const [activeTab, setActiveTab] = useState<"Overview" | "Detect" | "Recommend" | "Scenarios" | "ModelCard">("Overview")
+  const [overlayExpanded, setOverlayExpanded] = useState(true)
+
   return (
     <div className="cc-fullmap">
-      {/* Full-screen terrain map background */}
+      {/* 1. Reverted back to the original TerrainMap */}
       <div className="cc-map-bg">
         <TerrainMap
           selectedAssetId={selectedId}
@@ -578,75 +606,113 @@ function CommandCentre({ openDrawer, openModal, openTrace }: CommandCentreProps)
         />
       </div>
 
-      {/* Glassmorphic overlay panels */}
+      {/* 2. PS-03 Component Overlays */}
       <div className="cc-overlay">
-        {/* Top row: KPI strip */}
+        {/* Active Incident Strip at the top (Section 7 in PDF) */}
+        <IncidentStrip onInspectAsset={openDrawer} />
+
+        {/* Top KPI strip (Section 1 in PDF) */}
         <div className="cc-kpi-strip glass-panel">
           <Kpis />
         </div>
 
-        {/* Middle section: left charts + right risk panel */}
-        <div className="cc-mid">
-          <div className="cc-left-stack">
-            <div className="glass-panel cc-chart-card">
-              <RiskDistribution />
-            </div>
-            <div className="glass-panel cc-chart-card">
-              <AgentPipeline onTrace={openTrace} />
-            </div>
+        {/* Sub-navigation Tabs to access all PS-03 Layer Components */}
+        <div className="flex items-center justify-between gap-2 py-1 px-1">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <button
+              className={`ps03-sector-btn ${activeTab === "Overview" ? "is-active" : ""}`}
+              onClick={() => { setActiveTab("Overview"); setOverlayExpanded(true); }}
+            >
+              Overview &amp; Attention Table
+            </button>
+            <button
+              className={`ps03-sector-btn ${activeTab === "Detect" ? "is-active" : ""}`}
+              onClick={() => { setActiveTab("Detect"); setOverlayExpanded(true); }}
+            >
+              Detect &amp; Rules (R1–R6)
+            </button>
+            <button
+              className={`ps03-sector-btn ${activeTab === "Recommend" ? "is-active" : ""}`}
+              onClick={() => { setActiveTab("Recommend"); setOverlayExpanded(true); }}
+            >
+              Recommend &amp; What-If
+            </button>
+            <button
+              className={`ps03-sector-btn ${activeTab === "Scenarios" ? "is-active" : ""}`}
+              onClick={() => { setActiveTab("Scenarios"); setOverlayExpanded(true); }}
+            >
+              Scenario Replay (demo_week)
+            </button>
+            <button
+              className={`ps03-sector-btn ${activeTab === "ModelCard" ? "is-active" : ""}`}
+              onClick={() => { setActiveTab("ModelCard"); setOverlayExpanded(true); }}
+            >
+              Model Card &amp; Trust
+            </button>
           </div>
-          <div className="cc-right-stack">
-            <div className="glass-panel cc-risk-card">
-              <ActiveRisk asset={selected} onDetails={() => openDrawer(selected)} onContain={() => openModal("contain")} />
-            </div>
-            <div className="glass-panel cc-action-card">
-              <RecommendedAction onApprove={() => openModal("approve")} onSimulate={() => openModal("simulate")} />
-            </div>
-          </div>
+
+          <button
+            className="ps03-sector-btn"
+            onClick={() => setOverlayExpanded(!overlayExpanded)}
+            title="Toggle panel overlay to view terrain map"
+          >
+            {overlayExpanded ? "Collapse View (See Map)" : "Expand Panels"}
+          </button>
         </div>
 
-        {/* Bottom stats bar */}
-        <div className="cc-bottom-bar glass-panel">
-          <div className="cc-stat-item">
-            <Shield size={14} className="cc-stat-icon protected" />
-            <span>Protected</span>
-            <strong>882k</strong>
-            <small>/ 912k</small>
-          </div>
-          <div className="cc-stat-item">
-            <AlertTriangle size={14} className="cc-stat-icon danger" />
-            <span>Danger</span>
-            <strong>1.2k</strong>
-            <small>/ 912k</small>
-          </div>
-          <div className="cc-stat-item">
-            <Bell size={14} className="cc-stat-icon alerts" />
-            <span>Alerts</span>
-            <strong>7.4k</strong>
-            <small>/ 912k</small>
-          </div>
-          <div className="cc-stat-item">
-            <Activity size={14} className="cc-stat-icon unknown" />
-            <span>Unknown</span>
-            <strong>1.1k</strong>
-            <small>/ 912k</small>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
+        {/* Scrollable container for PDF specification components */}
+        {overlayExpanded && (
+          <div className="space-y-4 max-h-[calc(100vh-270px)] overflow-y-auto pr-1">
+            {activeTab === "Overview" && (
+              <>
+                <RankedNeedsAttentionTable
+                  onSelectAsset={(a) => {
+                    setSelectedId(a.id)
+                    openDrawer(a)
+                  }}
+                  onAction={(a) => {
+                    setSelectedId(a.id)
+                    openModal("contain")
+                  }}
+                />
+                <RiskOverTimeAndWhatChanged />
+              </>
+            )}
 
-function FullScreenMapPage() {
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  return (
-    <div className="cc-fullmap">
-      <div className="cc-map-bg">
-        <TerrainMap
-          selectedAssetId={selectedId ?? undefined}
-          onAssetSelect={(asset) => setSelectedId(asset.id)}
-          wheelZoom="always"
-        />
+            {activeTab === "Detect" && (
+              <DetectTelemetryAndRules
+                onSelectAsset={(a) => {
+                  setSelectedId(a.id)
+                  openDrawer(a)
+                }}
+              />
+            )}
+
+            {activeTab === "Recommend" && (
+              <RecommendPlannerPanel
+                asset={selected}
+                onExecuteAction={(act) => openModal(act.toLowerCase())}
+              />
+            )}
+
+            {activeTab === "Scenarios" && (
+              <ScenarioSimulationControls
+                currentDay={5}
+                onSetDay={(d) => console.log("Set simulated day:", d)}
+                onInjectEvent={(assetId, episode) => {
+                  openModal("contain")
+                }}
+              />
+            )}
+
+            {activeTab === "ModelCard" && (
+              <>
+                <ModelCardView />
+                <TrustGovernanceBlock />
+              </>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -721,12 +787,39 @@ function AssetInventory({
           Export <ExternalLink size={14} />
         </Button>
       </div>
+      {/* Exposure Findings X1-X3 (Know Layer) */}
+      <div className="ps03-card mb-4">
+        <div className="ps03-card-header">
+          <div>
+            <h3>Exposure Findings (X1–X3)</h3>
+            <p className="ps03-subtitle">Automated perimeter and boundary exposure detection</p>
+          </div>
+          <span className="ps03-badge-layer">Know · Exposure</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {exposureFindings.map((xf) => (
+            <div key={xf.code} className="p-3 bg-[#111a23] rounded-lg border border-[#202e3a]">
+              <div className="flex items-center justify-between">
+                <span className="ps03-badge-layer font-bold">{xf.code}</span>
+                <span className={`ps03-badge-sev sev-${xf.severity.toLowerCase()}`}>{xf.severity}</span>
+              </div>
+              <strong className="block text-sm text-[#e7edf3] mt-1.5">{xf.title}</strong>
+              <p className="text-xs text-[#9aaab8] mt-1">{xf.description}</p>
+              <div className="flex justify-between items-center text-[11px] text-[#687987] mt-2 pt-2 border-t border-[#202e3a]">
+                <span>Target: <strong>{xf.assetId}</strong></span>
+                <span>{xf.discovered}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="table-panel">
         <div className="table-summary">
           <span>
             <strong>{filtered.length}</strong> assets shown
           </span>
-          <span>Last assessment sync · 8 min ago</span>
+          <span>Last assessment sync · 8 min ago · Real CISA/KEV &amp; Synthetic</span>
         </div>
         <div className="table-scroll">
           <table>
@@ -734,47 +827,65 @@ function AssetInventory({
               <tr>
                 <th>Asset</th>
                 <th>Organisation</th>
-                <th>Type</th>
-                <th>Exposure</th>
-                <th>Vulnerability</th>
+                <th>Type / Zone</th>
+                <th>Internet Exposed</th>
+                <th>Vulnerability &amp; KEV</th>
                 <th>Likelihood</th>
                 <th>Impact</th>
-                <th>Risk score</th>
+                <th>Risk Score</th>
                 <th />
               </tr>
             </thead>
             <tbody>
-              {filtered.map((a) => (
-                <tr key={a.id} onClick={() => openDrawer(a)}>
-                  <td>
-                    <strong>{a.id}</strong>
-                    <span>{a.name}</span>
-                  </td>
-                  <td>{a.org}</td>
-                  <td>{a.type}</td>
-                  <td>{a.exposure}</td>
-                  <td>
-                    <Badge
-                      tone={a.vulnerability === "Patched" ? "healthy" : "high"}
-                    >
-                      {a.vulnerability}
-                    </Badge>
-                  </td>
-                  <td>{a.likelihood}%</td>
-                  <td>{a.impact}%</td>
-                  <td>
-                    <div className="risk-cell">
-                      <strong style={{ color: riskColors[a.level] }}>
-                        {a.risk.toFixed(2)}
-                      </strong>
-                      <Badge tone={a.level}>{a.level}</Badge>
-                    </div>
-                  </td>
-                  <td>
-                    <ChevronRight size={16} />
-                  </td>
-                </tr>
-              ))}
+              {filtered.map((a) => {
+                const pred = getAssetPredictDetails(a.id)
+                const isInternet = a.exposure.includes("Internet")
+                return (
+                  <tr key={a.id} onClick={() => openDrawer(a)}>
+                    <td>
+                      <strong>{a.id}</strong>
+                      <span>{a.name}</span>
+                    </td>
+                    <td>{a.org}</td>
+                    <td>
+                      <div>
+                        <strong>{a.type}</strong>
+                        <span className="block text-xs text-[#687987]">Zone: {a.zone}</span>
+                      </div>
+                    </td>
+                    <td>
+                      {isInternet ? (
+                        <span className="ps03-badge-sev sev-critical">Internet-Facing</span>
+                      ) : (
+                        <span className="text-xs text-[#9aaab8]">{a.exposure}</span>
+                      )}
+                    </td>
+                    <td>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <Badge tone={a.vulnerability === "Patched" ? "healthy" : "high"}>
+                          {a.vulnerability}
+                        </Badge>
+                        {pred.vulnData.kevBadge && (
+                          <span className="ps03-badge-sev sev-critical text-[10px]">KEV</span>
+                        )}
+                      </div>
+                    </td>
+                    <td>{a.likelihood}%</td>
+                    <td>{a.impact}%</td>
+                    <td>
+                      <div className="risk-cell">
+                        <strong style={{ color: riskColors[a.level] }}>
+                          {a.risk.toFixed(2)}
+                        </strong>
+                        <Badge tone={a.level}>{a.level}</Badge>
+                      </div>
+                    </td>
+                    <td>
+                      <ChevronRight size={16} />
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
           {filtered.length === 0 && (
@@ -1314,62 +1425,80 @@ function DetailDrawer({
             <strong>{asset.impact}%</strong>
           </div>
         </div>
+        {/* 1. Predict Layer: Risk Gauge & Basis Points, SHAP 'Why' Panel, Holt Trend */}
         <div className="drawer-section">
-          <h3>Asset context</h3>
+          <h3>Predict Analysis (PS-03 Layer)</h3>
+          <PredictShapAndTrendPanel asset={asset} />
+        </div>
+
+        {/* 2. Impact Layer: Cascade Preview & Before/After Containment Toggle */}
+        <div className="drawer-section">
+          <h3>Impact Assessment (Cascade)</h3>
+          <CascadePreviewPanel asset={asset} />
+        </div>
+
+        {/* 3. Vulnerability Panel (Know Layer) */}
+        <div className="drawer-section">
+          <h3>Vulnerability Intelligence</h3>
+          {(() => {
+            const pred = getAssetPredictDetails(asset.id)
+            const v = pred.vulnData
+            return (
+              <div className="info-list">
+                <div>
+                  <span>CVE ID</span>
+                  <strong className="text-[#e45b5b]">{v.cveId}</strong>
+                </div>
+                <div>
+                  <span>CVSS / EPSS</span>
+                  <strong>{v.cvss.toFixed(1)} / {(v.epss * 100).toFixed(1)}%</strong>
+                </div>
+                <div>
+                  <span>CISA KEV Status</span>
+                  {v.kevBadge ? (
+                    <span className="ps03-badge-sev sev-critical">Listed in KEV</span>
+                  ) : (
+                    <span className="text-xs text-[#9aaab8]">Not in KEV</span>
+                  )}
+                </div>
+                <div>
+                  <span>Patch Age</span>
+                  <strong>{v.patchAgeDays} days unpatched</strong>
+                </div>
+                <div>
+                  <span>Data Source</span>
+                  <span className="text-xs font-semibold text-[#28b8c5]">{v.source}</span>
+                </div>
+              </div>
+            )
+          })()}
+        </div>
+
+        {/* 4. Asset Context & Exposure */}
+        <div className="drawer-section">
+          <h3>Asset Context</h3>
           <div className="info-list">
             <div>
               <span>Exposure</span>
-              <strong>{asset.exposure}</strong>
+              <strong className={asset.exposure.includes("Internet") ? "text-[#e45b5b]" : ""}>
+                {asset.exposure}
+              </strong>
             </div>
             <div>
-              <span>Vulnerability</span>
-              <strong>{asset.vulnerability}</strong>
+              <span>Zone</span>
+              <strong>{asset.zone}</strong>
             </div>
             <div>
-              <span>Last assessed</span>
-              <strong>8 minutes ago</strong>
+              <span>Location</span>
+              <strong>{asset.location}</strong>
             </div>
             <div>
-              <span>Data confidence</span>
+              <span>Data Confidence</span>
               <strong>High · 94%</strong>
             </div>
           </div>
         </div>
-        <div className="drawer-section">
-          <h3>Dependency path</h3>
-          {asset.cascade === "None identified" ? (
-            <p>No downstream dependency path identified for this asset.</p>
-          ) : (
-            <>
-              <div className="drawer-path">
-                {[asset.id, ...asset.cascade.split(" → ")].map((step, i) => (
-                  <span key={step} className="drawer-path-step">
-                    {i > 0 && <ArrowRight />}
-                    <span>{step}</span>
-                  </span>
-                ))}
-              </div>
-              <p>Potential propagation path across monitored dependencies, ordered by downstream impact.</p>
-            </>
-          )}
-        </div>
-        <div className="drawer-section">
-          <h3>Recent evidence</h3>
-          <div className="evidence">
-            <FileCheck2 />
-            <div>
-              <strong>Vulnerability scan</strong>
-              <span>Matched active advisory · 12 min ago</span>
-            </div>
-          </div>
-          <div className="evidence">
-            <Network />
-            <div>
-              <strong>Dependency attestation</strong>
-              <span>Verified by WGEC · 2 days ago</span>
-            </div>
-          </div>
-        </div>
+
         <div className="drawer-actions">
           <Button variant="primary">Open risk intelligence</Button>
           <Button variant="secondary">View asset record</Button>
@@ -1551,12 +1680,14 @@ function TraceDrawer({ open, onClose }: TraceDrawerProps) {
 export default function App() {
   const [page, setPage] = useState<Page>("Command Centre")
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [drawerAsset, setDrawerAsset] = useState<Asset | null>(
-    null,
-  )
+  const [drawerAsset, setDrawerAsset] = useState<Asset | null>(null)
   const [modal, setModal] = useState<string | null>(null)
   const [traceOpen, setTraceOpen] = useState(false)
   const [search, setSearch] = useState("")
+  const [simulatedDay, setSimulatedDay] = useState(6)
+  const [selectedSector, setSelectedSector] = useState("All Sectors")
+  const [incidentsOpen, setIncidentsOpen] = useState(false)
+
   const content = useMemo(() => {
     switch (page) {
       case "Command Centre":
@@ -1581,10 +1712,9 @@ export default function App() {
         return <BlockchainAudit />
       case "Settings":
         return <SettingsPage />
-      case "Full Screen Map":
-        return <FullScreenMapPage />
     }
   }, [page, search])
+
   return (
     <div className="app-shell">
       <Sidebar
@@ -1594,11 +1724,64 @@ export default function App() {
         setOpen={setSidebarOpen}
       />
       <main className="main-shell">
+        {/* Section 1 in PDF: Global simulation-only banner on every screen */}
+        <GlobalSimulationBanner />
+
         <Header
           page={page}
           onMenu={() => setSidebarOpen(true)}
           onSearch={setSearch}
+          onToggleIncidents={() => setIncidentsOpen((v) => !v)}
+          activeIncidentsCount={2}
         />
+
+        {/* Global simulated-date clock, org/sector switcher, model badge */}
+        <GlobalClockAndModelBadge
+          simulatedDay={simulatedDay}
+          onDayChange={(delta) => setSimulatedDay((d) => Math.max(1, Math.min(6, d + delta)))}
+          onReset={() => setSimulatedDay(1)}
+          selectedSector={selectedSector}
+          onSectorChange={setSelectedSector}
+        />
+
+        {/* Incidents Quick Dropdown from Header Bell */}
+        {incidentsOpen && (
+          <div className="ps03-incidents-dropdown glass-panel">
+            <div className="ps03-dropdown-title">
+              <Flame size={15} color="#f87171" />
+              <strong>Active Incidents (2)</strong>
+            </div>
+            <div
+              className="ps03-dropdown-item"
+              onClick={() => {
+                const a = assetById.get("PG-003")
+                if (a) setDrawerAsset(a)
+                setIncidentsOpen(false)
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-white">PG-003 — Primary Substation SCADA</span>
+                <span className="badge badge-critical text-xs">CRITICAL</span>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">Trigger: Exploit Attempt + Lateral Ping · Age: 12m</p>
+            </div>
+            <div
+              className="ps03-dropdown-item"
+              onClick={() => {
+                const a = assetById.get("PG-019")
+                if (a) setDrawerAsset(a)
+                setIncidentsOpen(false)
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-white">PG-019 — Perimeter Telemetry Gateway</span>
+                <span className="badge badge-high text-xs">HIGH</span>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">Trigger: Suspicious Ingress Beacon · Age: 41m</p>
+            </div>
+          </div>
+        )}
+
         {content}
       </main>
       <DetailDrawer asset={drawerAsset} onClose={() => setDrawerAsset(null)} />
